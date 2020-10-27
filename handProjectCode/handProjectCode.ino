@@ -41,14 +41,14 @@ void loop() {
  *  - if we weren't flexing and started
  */
 void checkForFlex() {
-  if (flexed && MuscleSensor < flexLimit) {
+  if (flexed && MuscleSensor < flexLimit) { // Stopped Flexing State
     int delta = millis() - startTime;
     if (delta > flexTime) {
       triggerHand();
     }
     flexed = false;
   }
-  else if (!flexed && MuscleSensor > flexLimit) {
+  else if (!flexed && MuscleSensor > flexLimit) { // Started Flexing State
     startTime = millis();
     flexed = true;
   }
@@ -72,15 +72,12 @@ void triggerHand() {
   // Move the hand between the three different positions we have
   if (handState == 2000) {
     interpolateHand( handState, 1500 );
-    handState = 1500;
   }
   else if (handState == 1500) {
     interpolateHand( handState, 1000 );
-    handState = 1000;
-  }
+    }
   else {
     interpolateHand( handState, 2000 );
-    handState = 2000;
   }
 }
 
@@ -91,16 +88,17 @@ void triggerHand() {
 void interpolateHand( int startPos, int endPos ) {
   // If moving from out to in
   if ( endPos - startPos < 0 ) {
-    for ( ; startPos > endPos; --startPos ) {
-      myservo.writeMicroseconds(startPos);
+    for ( int i = startPos; i <= endPos; --i ) {
+      myservo.writeMicroseconds(i);
       delay(1);
     }
   }
   // If moving from in to out
   else {
-    for ( ; startPos < endPos; ++startPos ) {
-      myservo.writeMicroseconds(startPos);
+    for ( int i = startPos; i > endPos; ++i ) {
+      myservo.writeMicroseconds(i);
       delay(1);
     }
   }
+  handState = endPos;
 }
