@@ -6,10 +6,10 @@ Servo myservo;  // create servo object to control a servo
 
 char plotData[16];
 int MuscleSensor = 0;
-bool flexed = false;
-int flexLimit = 100;
-long startTime = 0;
-int flexTime = 1000; //written in millisec
+bool canFlex = true;
+int flexLimit = 600;
+unsigned long startTime = 0;
+int waitTime = 3000; //written in millisec
 int handState = 2000; //open=2000, mid=1500, closed=1000 in uS
 uint8_t led_pin = 7;
 
@@ -29,9 +29,31 @@ void setup() {
 
 void loop() {
   MuscleSensor = analogRead(A0); // Read data
-  sprintf(plotData, "0 %d 300", MuscleSensor); // format
+  sprintf(plotData, "0 %d 1000 ", MuscleSensor); // format
   Serial.println(plotData); // plot
-  checkForFlex(); // check if flexing
+
+  // Check for flex
+  if ( MuscleSensor > 600  && canFlex ) {
+    if( handState == 2000 ) {     
+      myservo.writeMicroseconds(1500);
+      handState = 1500;
+    } else if ( handState == 1500 ) {
+      myservo.writeMicroseconds(1000);
+      handState = 1000;
+    } else {
+      myservo.writeMicroseconds(2000);
+      handState = 2000;
+    }
+    startTime = millis();
+    canFlex = false;
+  }
+
+  // Allow flexing again
+  if( !canFlex &&  (millis() - startTime > waitTime) ) {
+    canFlex = true;
+  }
+ 
+  //checkForFlex(); // check if flexing
 }
 
 
@@ -40,6 +62,7 @@ void loop() {
  *  - if we were flexing and stopped
  *  - if we weren't flexing and started
  */
+/*
 void checkForFlex() {
   if (flexed && MuscleSensor < flexLimit) { // Stopped Flexing State
     int delta = millis() - startTime;
@@ -53,6 +76,7 @@ void checkForFlex() {
     flexed = true;
   }
 }
+*/
 
 
 /*
@@ -61,6 +85,7 @@ void checkForFlex() {
 void triggerHand() {
 
   // Blink the LED for a sanity check that we're doing something right
+  /*
   digitalWrite(led_pin, HIGH);
   delay(250);
   digitalWrite(led_pin, LOW);
@@ -68,8 +93,10 @@ void triggerHand() {
   digitalWrite(led_pin, HIGH);
   delay(250);
   digitalWrite(led_pin, LOW);
+  */
 
   // Move the hand between the three different positions we have
+  /*
   if (handState == 2000) {
     interpolateHand( handState, 1500 );
   }
@@ -79,6 +106,7 @@ void triggerHand() {
   else {
     interpolateHand( handState, 2000 );
   }
+  */
 }
 
 
@@ -88,14 +116,14 @@ void triggerHand() {
 void interpolateHand( int startPos, int endPos ) {
   // If moving from out to in
   if ( endPos - startPos < 0 ) {
-    for ( int i = startPos; i <= endPos; --i ) {
+    for ( int i = startPos; i >= endPos; i -= 10 ) {
       myservo.writeMicroseconds(i);
       delay(1);
     }
   }
   // If moving from in to out
   else {
-    for ( int i = startPos; i > endPos; ++i ) {
+    for ( int i = startPos; i < endPos; i += 10 ) {
       myservo.writeMicroseconds(i);
       delay(1);
     }
