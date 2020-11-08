@@ -22,17 +22,16 @@ enum HandPos {
 Servo hand; // The object for the linear actuator
 
 // Global Vars
-uint16_t  flexReading = 0;  // The value read from the MyoWare sensor
-uint16_t  flexLimit = 650;  // This value has been calculated experimentally (may need to change per user)
-uint16_t  waitTime = 1500;  // Amount of time between actuations in ms
-uint16_t  handState = OPEN;   // Uses the HandPos enum above (represents us for servo timing)
-bool      canFlex = true;   // turns back to TRUE after waiting 'waitTime' ms from last actuation
+uint16_t  flexReading = 0;      // The value read from the MyoWare sensor
+uint16_t  flexLimit = 600;      // This value has been calculated experimentally (may need to change per user)
+uint16_t  waitTime = 800;       // Amount of time between actuations in ms
+uint16_t  handState = MIDDLE;   // Uses the HandPos enum above (represents us for servo timing)
+bool      canFlex = true;       // turns back to TRUE after waiting 'waitTime' ms from last actuation
 
 unsigned long lastFlexTime = 0; // stores when the last flex happend -- used to determine when to
-// allow to user to flex again
-
+                                // allow to user to flex again
 // Debug Data
-char plotData[16];
+char plotData[20];
 
 /*
    End Variables
@@ -55,16 +54,17 @@ void setup()
 
   // Blink the LED to show setup complete
   digitalWrite(LED_PIN, HIGH);
-  delay(20);
+  delay(100);
   digitalWrite(LED_PIN, LOW);
-  delay(20);
+  delay(100);
   digitalWrite(LED_PIN, HIGH);
-  delay(20);
+  delay(100);
   digitalWrite(LED_PIN, LOW);
-  delay(20);
+  delay(100);
 
   // Finish initialization
   Serial.println(F("VT QL+ Hand Actuator setup complete"));
+  Serial.println(F("Zero,FlexReading,FlexLimit,OneThousand"));
 }
 
 
@@ -76,7 +76,7 @@ void loop()
 
   // Poll and plot data
   flexReading = analogRead(MYOWARE_SENSOR_PIN); // read
-  sprintf(plotData, "-100 %05d 1200\n", flexReading); // format
+  sprintf(plotData, "0,%05d,%05d,1000\n", flexLimit, flexReading); // format
   Serial.println(plotData); // plot
 
   // Check if the user is flexing
@@ -100,7 +100,7 @@ void loop()
     canFlex = false;
     // Blink the LED to inform the user they hit the flex limit
     digitalWrite( LED_PIN, HIGH );
-    delay(10);
+    delay(20);
     digitalWrite( LED_PIN, LOW );
   }
 
