@@ -1,132 +1,112 @@
 #include <Servo.h>
 
-#define MUSCLE_SENSOR_PIN A0
+/*
+   Global enum for hand state positions
+*/
+enum HandPos {
+  CLOSED = 1000,
+  MIDDLE = 1500,
+  OPEN = 2000
+};
 
-Servo myservo;  // create servo object to control a servo
+/*
+   Begin Variables
+*/
 
+// Pin numbers for the hardware
+#define MYOWARE_SENSOR_PIN A0
+#define ACTUATOR_PIN 3
+#define LED_PIN 7
+
+// Objects
+Servo hand; // The object for the linear actuator
+
+// Global Vars
+uint16_t  flexReading = 0;  // The value read from the MyoWare sensor
+uint16_t  flexLimit = 650;  // This value has been calculated experimentally (may need to change per user)
+uint16_t  waitTime = 1500;  // Amount of time between actuations in ms
+uint16_t  handState = OPEN;   // Uses the HandPos enum above (represents us for servo timing)
+bool      canFlex = true;   // turns back to TRUE after waiting 'waitTime' ms from last actuation
+
+unsigned long lastFlexTime = 0; // stores when the last flex happend -- used to determine when to
+// allow to user to flex again
+
+// Debug Data
 char plotData[16];
-int MuscleSensor = 0;
-bool canFlex = true;
-int flexLimit = 600;
-unsigned long startTime = 0;
-int waitTime = 3000; //written in millisec
-int handState = 2000; //open=2000, mid=1500, closed=1000 in uS
-uint8_t led_pin = 7;
-
-void setup() {
-  Serial.begin(115200);
-
-  // Setup the debug LED
-  pinMode(led_pin, OUTPUT );
-  digitalWrite(led_pin, HIGH);
-  delay(1000);
-  digitalWrite(led_pin, LOW);
-
-  myservo.attach(9);  // Sends the PWM signal for the servo over pin 9
-
-  pinMode(MUSCLE_SENSOR_PIN, INPUT); // Allows the data to be read from the sensor on the pin A0
-}
-
-void loop() {
-  MuscleSensor = analogRead(A0); // Read data
-  sprintf(plotData, "0 %d 1000 ", MuscleSensor); // format
-  Serial.println(plotData); // plot
-
-  // Check for flex
-  if ( MuscleSensor > 600  && canFlex ) {
-    if( handState == 2000 ) {     
-      myservo.writeMicroseconds(1500);
-      handState = 1500;
-    } else if ( handState == 1500 ) {
-      myservo.writeMicroseconds(1000);
-      handState = 1000;
-    } else {
-      myservo.writeMicroseconds(2000);
-      handState = 2000;
-    }
-    startTime = millis();
-    canFlex = false;
-  }
-
-  // Allow flexing again
-  if( !canFlex &&  (millis() - startTime > waitTime) ) {
-    canFlex = true;
-  }
- 
-  //checkForFlex(); // check if flexing
-}
-
 
 /*
- * A basic state machine, checking...
- *  - if we were flexing and stopped
- *  - if we weren't flexing and started
- */
-/*
-void checkForFlex() {
-  if (flexed && MuscleSensor < flexLimit) { // Stopped Flexing State
-    int delta = millis() - startTime;
-    if (delta > flexTime) {
-      triggerHand();
-    }
-    flexed = false;
-  }
-  else if (!flexed && MuscleSensor > flexLimit) { // Started Flexing State
-    startTime = millis();
-    flexed = true;
-  }
-}
+   End Variables
 */
 
 
 /*
- * Handles debug led and moving the hand between states
- */
-void triggerHand() {
+   Initial setup of the hand
+*/
+void setup() 
+{
+  // Setup debug
+  Serial.begin(115200);
+  Serial.println(F("VT QL+ Hand Actuator initializing..."));
 
-  // Blink the LED for a sanity check that we're doing something right
-  /*
-  digitalWrite(led_pin, HIGH);
-  delay(250);
-  digitalWrite(led_pin, LOW);
-  delay(250);
-  digitalWrite(led_pin, HIGH);
-  delay(250);
-  digitalWrite(led_pin, LOW);
-  */
+  // Setup hardware
+  pinMode(MYOWARE_SENSOR_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  hand.attach(ACTUATOR_PIN, 1000, 2000); // sets up the actuator so the range or motion is [1000, 2000]
 
-  // Move the hand between the three different positions we have
-  /*
-  if (handState == 2000) {
-    interpolateHand( handState, 1500 );
-  }
-  else if (handState == 1500) {
-    interpolateHand( handState, 1000 );
-    }
-  else {
-    interpolateHand( handState, 2000 );
-  }
-  */
+  // Blink the LED to show setup complete
+  digitalWrite(LED_PIN, HIGH);
+  delay(20);
+  digitalWrite(LED_PIN, LOW);
+  delay(20);
+  digitalWrite(LED_PIN, HIGH);
+  delay(20);
+  digitalWrite(LED_PIN, LOW);
+  delay(20);
+
+  // Finish initialization
+  Serial.println(F("VT QL+ Hand Actuator setup complete"));
 }
 
 
 /*
- * An interpolating function, gradually moving the hand between positions
- */
-void interpolateHand( int startPos, int endPos ) {
-  // If moving from out to in
-  if ( endPos - startPos < 0 ) {
-    for ( int i = startPos; i >= endPos; i -= 10 ) {
-      myservo.writeMicroseconds(i);
-      delay(1);
+   Main loop
+*/
+void loop()
+{
+
+  // Poll and plot data
+  flexReading = analogRead(MYOWARE_SENSOR_PIN); // read
+  sprintf(plotData, "-100 %05d 1200\n", flexReading); // format
+  Serial.println(plotData); // plot
+
+  // Check if the user is flexing
+  if ( flexReading > flexLimit  && canFlex ) {
+    // Update the position
+    switch (handState) {
+      case CLOSED:
+        handState = OPEN;
+        break;
+      case MIDDLE:
+        handState = CLOSED;
+        break;
+      case OPEN:
+        handState = MIDDLE;
+        break;
     }
+    // Tell the hand to move to the updated position
+    hand.writeMicroseconds(handState);
+    // Update vars so the user can't flex until 'waitTime' has passed
+    lastFlexTime = millis();
+    canFlex = false;
+    // Blink the LED to inform the user they hit the flex limit
+    digitalWrite( LED_PIN, HIGH );
+    delay(10);
+    digitalWrite( LED_PIN, LOW );
   }
-  // If moving from in to out
-  else {
-    for ( int i = startPos; i < endPos; i += 10 ) {
-      myservo.writeMicroseconds(i);
-      delay(1);
-    }
+
+  // Check if 'waitTime' has passed yet
+  if ( !canFlex &&  (millis() - lastFlexTime > waitTime) ) {
+    canFlex = true;
   }
-  handState = endPos;
+
 }
