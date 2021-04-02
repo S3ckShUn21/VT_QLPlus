@@ -1,6 +1,6 @@
-#define LED_RED 5
-#define LED_GREEN 6
-#define LED_BLUE 7
+#define LED_RED 9
+#define LED_GREEN 10
+#define LED_BLUE 11
 
 
 // The Colors are valued such that the bits are

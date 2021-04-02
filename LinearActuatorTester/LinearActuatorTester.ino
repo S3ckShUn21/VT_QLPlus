@@ -1,6 +1,6 @@
 #include <Servo.h>
 
-#define ACTUATOR 11
+#define ACTUATOR 3
 
 Servo actuator;
 uint8_t value;

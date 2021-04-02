@@ -1,15 +1,13 @@
 #include <Servo.h>
 
 // Pin numbers for the hardware
-#define RED_PIN 5
-#define GREEN_PIN 6
-#define BLUE_PIN 7
+#define RED_PIN 9
+#define GREEN_PIN 10
+#define BLUE_PIN 11
 
-#define LOW_BAT_PIN 8
-#define CHARGING_PIN 9
-#define FULLY_CHARGED_PIN 10
+#define LOW_BAT_PIN 4
 
-#define MYOWARE_SENSOR_PIN A0
+#define MYOWARE_SENSOR_PIN A5
 #define ACTUATOR_PIN 3
 
 // The bit field is set up as
@@ -29,9 +27,9 @@ enum LEDColor {
    Global enum for hand state positions
 */
 enum HandPos {
-  CLOSED = 1000,
-  MIDDLE = 1500,
-  OPEN = 2000
+  CLOSED = 1500,
+  MIDDLE = 1650,
+  OPEN = 1800
 };
 
 // Objects
@@ -60,15 +58,11 @@ void setup() {
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(BLUE_PIN, OUTPUT);
 
-  // Setup all the input pins
-  pinMode(LOW_BAT_PIN, INPUT);
-  pinMode(CHARGING_PIN, INPUT);
-  pinMode(FULLY_CHARGED_PIN, INPUT);
-
+  // Setup input pin
+  pinMode(LOW_BAT_PIN, INPUT_PULLUP);
 
   // Setup hardware
   pinMode(MYOWARE_SENSOR_PIN, INPUT);
-  pinMode(LED_PIN, OUTPUT);
   hand.attach(ACTUATOR_PIN, 1000, 2000); // sets up the actuator so the range or motion is [1000, 2000]
 
   // Finish initialization
@@ -107,8 +101,8 @@ void loop() {
     lastFlexTime = millis();
     canFlex = false;
 
-    setLED(BLUE);
-    delay(20);
+    // setLED(BLUE);
+    // delay(500);
   }
 
   // Check if 'waitTime' has passed yet
@@ -119,10 +113,6 @@ void loop() {
   // Check sequence for LED status
   if ( !digitalRead(LOW_BAT_PIN) ) {
     setLED(RED);
-  } else if ( digitalRead(FULLY_CHARGED_PIN) ) {
-    setLED(GREEN);
-  } else if ( digitalRead(CHARGING_PIN) ) {
-    setLED(YELLOW);
   } else {
     setLED(WHITE);
   }
