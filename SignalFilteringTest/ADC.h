@@ -3,10 +3,10 @@
 
 // As of right now this only inits reading from A0
 // Sets up auto conversion and interupt on completion
-// Use the ISR( ADC_vect ) to run code on completion 
+// Use the ISR( ADC_vect ) to run code on converions  
 void initADC();
 
-// Will turn on Auto trigger and then start a conversion
+// Will enable the ADC, turn on auto trigger, and then start a conversion
 void startADC();
 
 // Will turn off auto trigger to stop future conversions

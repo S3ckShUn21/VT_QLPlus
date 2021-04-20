@@ -10,7 +10,7 @@ void initADC() {
 
   ADMUX = 0x00; // set ADC to read from A0
   ADMUX |= (1 << REFS0); // set reference voltage to internal 5V
-// ADMUX |= (1 << ADLAR); // set the adc buffer to left align the reading
+  ADMUX |= (1 << ADLAR); // set the adc buffer to left align the reading
   
 
   // sample rate =  [ADC clock ] / [ prescaler ] / [ conversion clock cycles ]

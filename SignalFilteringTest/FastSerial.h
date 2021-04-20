@@ -1,6 +1,8 @@
 #ifndef _FAST_SERIAL_H_
 #define _FAST_SERIAL_H_
 
+#include <Arduino.h>
+
 //////////////////////////////////////
 //
 // Baudrates based on 16MHz clock
@@ -22,9 +24,16 @@
 // Currently only allows transmit
 void initSerial(unsigned int baudRateSetting);
 
+// self explanitory
+void printString(char* str);
+
 // Will print a 16bit unsigned value as a string
 // End the string with '\n'
 void println16bit(unsigned int val);
+
+// Will print the byte as a string
+// Ends the val with '\n'
+void println8bit(char val);
 
 // Sends a single char
 void sendChar(char val);

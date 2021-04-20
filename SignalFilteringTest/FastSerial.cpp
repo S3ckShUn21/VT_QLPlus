@@ -1,4 +1,5 @@
 #include "FastSerial.h"
+
 #include <avr/io.h>
 #include <stdio.h>
 
@@ -15,6 +16,15 @@ void initSerial(unsigned int baudRateSetting) {
 // UCSR0B = (1<<RXEN0);  // enable recieve
 }
 
+void printString(char* str) {
+  char* loc = str;
+  while(*loc) {
+    while (!( UCSR0A & (1<<UDRE0))); // Wait for empty transmit buffer
+    UDR0 = *loc;
+    loc++;
+  }
+}
+
 void println16bit(unsigned int val) {
   // format value
   char buff[6];
@@ -24,7 +34,24 @@ void println16bit(unsigned int val) {
   int i = 0;
   while( buff[i] ) {
     while (!( UCSR0A & (1<<UDRE0))); // Wait for empty transmit buffer
-    UDR0 =buff[i++]; 
+    UDR0 = buff[i++]; 
+  }
+
+  // print newline
+  while (!( UCSR0A & (1<<UDRE0))); // Wait for empty transmit buffer
+  UDR0 = '\n';
+}
+
+void println8bit(char val) {
+  // format value
+  char buff[4];
+  sprintf(buff, "%u", (uint8_t)val);
+
+  // print string
+  int i = 0;
+  while( buff[i] ) {
+    while (!( UCSR0A & (1<<UDRE0))); // Wait for empty transmit buffer
+    UDR0 = buff[i++]; 
   }
 
   // print newline
